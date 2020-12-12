@@ -25,9 +25,8 @@ namespace SingleScreenCapture
         static void Main(string[] args)
         {
             var arguments = ParseCommandLineArguments(args);
-            int screenIndex;
-            SaveMode saveMode;
 
+            int screenIndex;
             if (!arguments.ContainsKey("screen-index")) screenIndex = DefaultScreenIndex;
             else if (!(int.TryParse(arguments["screen-index"], out screenIndex)) ||
                      !(screenIndex < Screen.AllScreens.Length))
@@ -38,12 +37,13 @@ namespace SingleScreenCapture
                 return;
             }
 
+            SaveMode saveMode;
             if (!arguments.ContainsKey("save-mode")) saveMode = DefaultSaveMode;
             else if (!Enum.TryParse(arguments["save-mode"], out saveMode))
             {
-                string message = "Invalid Command-Line Argument (save-mode)";
-                message += "0 : Save to Clipboard, 1 : Save as File";
-                message += "Example 1 (Clipboard) : --save-mode=0";
+                string message = "Invalid Command-Line Argument (save-mode)\n";
+                message += "0 : Save to Clipboard, 1 : Save as File\n";
+                message += "Example 1 (Clipboard) : --save-mode=0\n";
                 message += "Example 2 (File) : --save-mode=1";
                 MessageBox.Show(message);
                 return;
@@ -54,17 +54,47 @@ namespace SingleScreenCapture
             var imageFormat = DefaultImageFormat;
 
             var bounds = Screen.AllScreens[screenIndex].Bounds;
-            switch (saveMode)
+            try
             {
-                case SaveMode.Clipboard:
-                    ScreenShot.SaveToClipboard(bounds.Left, bounds.Top, bounds.Width, bounds.Height);
-                    break;
-                case SaveMode.File:
-                    ScreenShot.SaveAsFile(bounds.Left, bounds.Top, bounds.Width, bounds.Height, dirPath, fileName, imageFormat);
-                    break;
-                default:
-                    MessageBox.Show($"Unsupported Save Mode ({saveMode})");
+                switch (saveMode)
+                {
+                    case SaveMode.Clipboard:
+                        ScreenShot.SaveToClipboard(bounds.Left, bounds.Top, bounds.Width, bounds.Height);
+                        break;
+                    case SaveMode.File:
+                        ScreenShot.SaveAsFile(bounds.Left, bounds.Top, bounds.Width, bounds.Height, dirPath, fileName, imageFormat);
+                        break;
+                    default:
+                        MessageBox.Show($"Unsupported Save Mode ({saveMode})");
+                        return;
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+                return;
+            }
+
+            if (saveMode == SaveMode.Clipboard)
+            {
+                var targetProcess = GetProcessLockingClipboard();
+                if (targetProcess.Id != 0)
+                {
+                    string message = $"The clipboard is currently locked due to the following process.\n";
+                    message += $"Process ID : {targetProcess.Id}\n";
+                    message += $"Process Name : {targetProcess.ProcessName}";
+                    MessageBox.Show(message);
                     return;
+                }
+                /*
+                else if (// TODO : Data Availability Check)
+                {
+                    string message = $"Clipboard processing has failed due to an unknown process.\n";
+                    message += "System restart is recommended if this problem consists.";
+                    MessageBox.Show(message);
+                    return;
+                }
+                */
             }
         }
 
@@ -82,6 +112,13 @@ namespace SingleScreenCapture
             }
 
             return arguments;
+        }
+        private static Process GetProcessLockingClipboard()
+        {
+            int processId;
+            WinAPI.GetWindowThreadProcessId(WinAPI.GetOpenClipboardWindow(), out processId);
+
+            return Process.GetProcessById(processId);
         }
     }
 }

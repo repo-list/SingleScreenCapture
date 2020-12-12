@@ -38,6 +38,9 @@ namespace SingleScreenCapture
         [DllImport("User32.dll")]
         public static extern bool CloseClipboard();
 
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr GetOpenClipboardWindow();
+
         // Graphics
         [DllImport("Gdi32.dll")]
         public static extern IntPtr SelectObject(IntPtr hDC, IntPtr hGdiObject);
@@ -59,5 +62,9 @@ namespace SingleScreenCapture
 
         [DllImport("Gdi32.dll")]
         public static extern bool BitBlt(IntPtr hDestDC, int destX, int destY, int width, int height, IntPtr hSourceDC, int sourceX, int sourceY, int rasterOperationType);
+
+        // Process
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern int GetWindowThreadProcessId(IntPtr hWnd, out int processId);
     }
 }

@@ -16,6 +16,8 @@ namespace SingleScreenCapture
             var bitmap = ScreenShot.Take(left, top, width, height);
 
             Clipboard.SetImage(bitmap.GetHbitmap(), Process.GetCurrentProcess().MainWindowHandle);
+
+            bitmap.Dispose();
         }
 
         public static void SaveAsFile(int left, int top, int width, int height, string dirPath, string fileName, ImageFormat format)
